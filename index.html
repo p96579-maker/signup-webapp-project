@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>報名表單</title>
+  <title>OT_報名表單</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
@@ -10,8 +10,10 @@
     h1 { font-size: 22px; margin-top: 0; text-align: center; }
     p.desc { font-size: 14px; color: #555; text-align: center; margin-bottom: 24px; white-space: pre-line; }
     label { display: block; font-size: 14px; margin-bottom: 6px; }
-    input[type="text"], textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; margin-bottom: 14px; }
-    textarea { resize: vertical; min-height: 80px; }
+    input[type="text"] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; margin-bottom: 14px; }
+    .ot-group { margin-bottom: 14px; }
+    .ot-option { display: flex; align-items: center; margin-bottom: 6px; font-size: 14px; }
+    .ot-option input { margin-right: 8px; }
     button[type="submit"] { width: 100%; padding: 10px 0; border-radius: 999px; border: none; font-size: 16px; cursor: pointer; background: #16a34a; color: white; font-weight: 600; }
     button[type="submit"]:hover { background: #15803d; }
     .success, .error { display: none; margin-top: 16px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
@@ -22,15 +24,34 @@
 <body>
   <div class="container">
     <h1 id="eventTitle">報名表單</h1>
-    <p id="eventRemark" class="desc">請輸入你的名字再送出。\n只有發起人會收到名單。</p>
+    <p id="eventRemark" class="desc">請輸入你的名字再送出。</p>
 
-    <form id="signupForm" action="https://formspree.io/f/xxxxxxx" method="POST">
+    <!-- TODO: 將 action 改成你自己 Formspree 提供嗰條 URL -->
+    <form id="signupForm" action="https://formspree.io/f/mpwvlzww" method="POST">
+      <!-- 名字 -->
       <label for="name">你的名字（必填）：</label>
-      <input type="text" id="name" name="姓名" required />
+      <input
+        type="text"
+        id="name"
+        name="姓名"
+        placeholder="e.g.  XX WONG"
+        required
+      />
 
-      <label for="note">備註（可選）：</label>
-      <textarea id="note" name="備註"></textarea>
+      <!-- OT 類型 -->
+      <div class="ot-group">
+        <label>OT 類型（必選）：</label>
+        <div class="ot-option">
+          <input type="radio" id="ot115" name="OT類型" value="OT + 11.5" />
+          <label for="ot115">OT + 11.5</label>
+        </div>
+        <div class="ot-option">
+          <input type="radio" id="ot7" name="OT類型" value="OT + 7 (頂加更)" />
+          <label for="ot7">OT + 7（頂加更）</label>
+        </div>
+      </div>
 
+      <!-- 由 URL 帶入嘅活動名／備註（隱藏欄位，方便後台分組） -->
       <input type="hidden" id="eventField" name="活動" value="報名表單" />
       <input type="hidden" id="eventRemarkField" name="活動備註" value="" />
 
@@ -42,6 +63,7 @@
   </div>
 
   <script>
+    // 由 URL 讀取 ?title= & ?remark=，設定活動標題及備註
     (function () {
       const params = new URLSearchParams(window.location.search);
       const defaultTitle = "報名表單";
@@ -68,14 +90,27 @@
 
       const formData = new FormData(form);
 
-      if (!formData.get("姓名") || formData.get("姓名").trim() === "") {
+      const name = formData.get("姓名");
+      const otType = formData.get("OT類型");
+
+      if (!name || name.trim() === "") {
         errorMsg.textContent = "請輸入名字。";
         errorMsg.style.display = "block";
         return;
       }
 
+      if (!otType) {
+        errorMsg.textContent = "請選擇 OT 類型。";
+        errorMsg.style.display = "block";
+        return;
+      }
+
       try {
-        const res = await fetch(form.action, { method: form.method, body: formData, headers: { Accept: "application/json" } });
+        const res = await fetch(form.action, {
+          method: form.method,
+          body: formData,
+          headers: { Accept: "application/json" }
+        });
 
         if (res.ok) {
           form.reset();
